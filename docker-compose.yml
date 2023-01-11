@@ -7,35 +7,59 @@ services:
     image: postgres
     # container_name: host name of the machine
     container_name: pgserver1
-    # ports: exposes ports on local machine
+    # ports: exposes port(s) on local machine
+      # e.g. 5555 -> port exposed local host
+      # e.g. 5432 -> port exposed internally in VM/container in Docker
     ports:
       - '5555:5432'
+    # env variables
     environment:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=dev-api
+      - POSTGRES_DB=dev-test-api
+    # volumes you want to share between host system and container
+      # e.g. "./docker/pg/postgres.conf" local folder maps to ":/etc/postgresql/postgresql.conf" on the container
     volumes:
       - ./docker/pg/postgres.conf:/etc/postgresql/postgresql.conf
       - ./data/pg:/var/lib/postgresql/data
+    # command to run when container starts -> starts postgres server with the configuration file
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    # networks: network(s) names that you set up that you want Docker to share between machines
     networks:
       - postgres
+    # policy for closing/opening container
     restart: always
 
+  # another machine build for admin for the PostgreSQL (someone uploaded to Docker hub that we are using)
   pgTestAdmin:
+    # dpage is the contributor who created the pgadmin4 image
     image: dpage/pgadmin4
     container_name: pgadmin1
+    # '$' utilizes existing pgadmin port setups
+      # 5554 here is local port on local host
+      # 80 is the internal port used in the container
     ports:
-      - '5555:5432'
+      - "${PGADMIN_PORT:-5554}:80"
+    # assign env variables with default variables for admin login
     environment:
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=dev-api
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD:-admin}"
+      # link to JSON file of servers
+      PGADMIN_SERVER_JSON_FILE: /tmp/.pgadmin/servers.json
     volumes:
-      - ./docker/pg/postgres.conf:/etc/postgresql/postgresql.conf
+      - ./docker/pgadmin:/tmp/.pgadmin
       - ./data/pg:/var/lib/postgresql/data
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    # auto starts we don't need the command here?
+    # command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    # same network as machine above
     networks:
       - postgres
-    restart: always
+    # does not necessarily need to restart every time like above. there might be other servers running
+    restart: unless-stopped
 
+# names of networks we want to share with any containers in our list
+networks:
+  # name of network
+  postgres:
+    # driver: how we will share the network
+    driver: bridge
