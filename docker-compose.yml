@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  # "pgTestServer" overall resource name for docker internally "pgTestServer"
+  pgTestServer:
+    # image: base operating system image that docker uses to base its container from
+    image: postgres
+    # container_name: host name of the machine
+    container_name: pgserver1
+    # ports: exposes ports on local machine
+    ports:
+      - '5555:5432'
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=dev-api
+    volumes:
+      - ./docker/pg/postgres.conf:/etc/postgresql/postgresql.conf
+      - ./data/pg:/var/lib/postgresql/data
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - postgres
+    restart: always
+
+  pgTestAdmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin1
+    ports:
+      - '5555:5432'
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=dev-api
+    volumes:
+      - ./docker/pg/postgres.conf:/etc/postgresql/postgresql.conf
+      - ./data/pg:/var/lib/postgresql/data
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - postgres
+    restart: always
+
