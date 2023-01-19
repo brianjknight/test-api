@@ -42,7 +42,9 @@ public class EmployeeService {
         return save(employeeToEdit);
     }
 
-    public void deleteEmployee(BigInteger id) {
+    public String deleteEmployee(BigInteger id) {
         employeeRepository.deleteById(id);
+
+        return String.format("Employee ID: %d was deleted successfully.", id);
     }
 }
